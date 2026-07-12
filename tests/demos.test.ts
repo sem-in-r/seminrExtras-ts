@@ -14,7 +14,11 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { readdirSync, statSync } from "node:fs";
 
-const REPO_ROOT = new URL("..", import.meta.url).pathname;
+// Bun.fileURLToPath (not URL.pathname): on Windows .pathname yields
+// "/D:/…/", an invalid cwd for spawn — fileURLToPath gives a native path.
+// The trailing separator is preserved, so the `${REPO_ROOT}dist/…` joins
+// below still work. Matches seminr-ts's demos.test.ts convention.
+const REPO_ROOT = Bun.fileURLToPath(new URL("..", import.meta.url));
 
 /** (script, marker substrings that must appear in stdout) */
 const DEMOS: [string, string[]][] = [
