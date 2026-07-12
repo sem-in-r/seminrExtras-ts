@@ -1,0 +1,39 @@
+{
+  "id": "M13",
+  "dataset": "mobi",
+  "description": "CTA mixed formative: Image mode_B; Image->{Expectation,Satisfaction}",
+  "pathCoef": {
+    "rows": ["Image", "Expectation", "Satisfaction"],
+    "cols": ["Image", "Expectation", "Satisfaction"],
+    "values": [
+      [0, 0.51117701625261014, 0.69847112354038887],
+      [0, 0, 0],
+      [0, 0, 0]
+    ]
+  },
+  "outerWeights": {
+    "rows": ["IMAG1", "IMAG2", "IMAG3", "IMAG4", "IMAG5", "CUEX1", "CUEX2", "CUEX3", "CUSA1", "CUSA2", "CUSA3"],
+    "cols": ["Image", "Expectation", "Satisfaction"],
+    "values": [
+      [0.30652025167427499, 0, 0],
+      [0.3134513818273747, 0, 0],
+      [0.13254145269087345, 0, 0],
+      [0.34648719431970637, 0, 0],
+      [0.31782357106622683, 0, 0],
+      [0, 0.47999254240664174, 0],
+      [0, 0.54890690777993378, 0],
+      [0, 0.40662179309036123, 0],
+      [0, 0, 0.40718871696205672],
+      [0, 0, 0.35858376876100817],
+      [0, 0, 0.43533482636703202]
+    ]
+  },
+  "rSquared": {
+    "rows": ["Rsq", "AdjRsq"],
+    "cols": ["Expectation", "Satisfaction"],
+    "values": [
+      [0.26130194194492129, 0.48786191041977323],
+      [0.25832332074308617, 0.48579683747791746]
+    ]
+  }
+}

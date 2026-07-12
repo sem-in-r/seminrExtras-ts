@@ -1,0 +1,38 @@
+{
+  "id": "M12",
+  "dataset": "mobi",
+  "description": "CTA formative focal: Value mode_B; {Image,Value}->Satisfaction",
+  "pathCoef": {
+    "rows": ["Image", "Value", "Satisfaction"],
+    "cols": ["Image", "Value", "Satisfaction"],
+    "values": [
+      [0, 0, 0.5070186089512162],
+      [0, 0, 0.35514925026924865],
+      [0, 0, 0]
+    ]
+  },
+  "outerWeights": {
+    "rows": ["IMAG1", "IMAG2", "IMAG3", "IMAG4", "IMAG5", "PERV1", "PERV2", "CUSA1", "CUSA2", "CUSA3"],
+    "cols": ["Image", "Value", "Satisfaction"],
+    "values": [
+      [0.33179982719671958, 0, 0],
+      [0.25279228855358082, 0, 0],
+      [0.20001116957602511, 0, 0],
+      [0.33110271380132195, 0, 0],
+      [0.31026839005845391, 0, 0],
+      [0, 0.16815126265489599, 0],
+      [0, 0.87503587981946684, 0],
+      [0, 0, 0.37362802435062231],
+      [0, 0, 0.37523396673228049],
+      [0, 0, 0.45065024826149169]
+    ]
+  },
+  "rSquared": {
+    "rows": ["Rsq", "AdjRsq"],
+    "cols": "Satisfaction",
+    "values": [
+      0.57434026234428082,
+      0.57089362479241257
+    ]
+  }
+}

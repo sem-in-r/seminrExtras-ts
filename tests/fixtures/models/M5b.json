@@ -1,0 +1,38 @@
+{
+  "id": "M5b",
+  "dataset": "mobi",
+  "description": "NCA 3-construct: {Image,Value}->Satisfaction",
+  "pathCoef": {
+    "rows": ["Image", "Value", "Satisfaction"],
+    "cols": ["Image", "Value", "Satisfaction"],
+    "values": [
+      [0, 0, 0.52094619480836357],
+      [0, 0, 0.3420516766107064],
+      [0, 0, 0]
+    ]
+  },
+  "outerWeights": {
+    "rows": ["IMAG1", "IMAG2", "IMAG3", "IMAG4", "IMAG5", "PERV1", "PERV2", "CUSA1", "CUSA2", "CUSA3"],
+    "cols": ["Image", "Value", "Satisfaction"],
+    "values": [
+      [0.33183818646923846, 0, 0],
+      [0.25289013139632677, 0, 0],
+      [0.19988517668481925, 0, 0],
+      [0.33106792202690705, 0, 0],
+      [0.31028157773192405, 0, 0],
+      [0, 0.476903864158429, 0],
+      [0, 0.6063381611328541, 0],
+      [0, 0, 0.37511941143749683],
+      [0, 0, 0.37350300152232818],
+      [0, 0, 0.45096669368918463]
+    ]
+  },
+  "rSquared": {
+    "rows": ["Rsq", "AdjRsq"],
+    "cols": "Satisfaction",
+    "values": [
+      0.57043777905990245,
+      0.56695954245309998
+    ]
+  }
+}

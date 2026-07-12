@@ -1,0 +1,796 @@
+{
+  "cases": [
+    {
+      "name": "m1_cipma",
+      "modelId": "M1",
+      "entry": "cipma",
+      "target": "Loyalty",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Image",
+        "Expectation",
+        "Value",
+        "Satisfaction"
+      ],
+      "excludedInteractions": [],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.81665681791240474,
+          0.22667077356338716,
+          0.17394862687730547,
+          0.75124712755370515
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.51049697628274848,
+          0.14545996533670055,
+          0.16312290673681368,
+          0.51096191760146026
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          73.151656646260108,
+          72.401475520786306,
+          61.952420627211936,
+          71.899213429427931
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "importance": [
+          0.81669999999999998,
+          0.22670000000000001,
+          0.1739,
+          0.75119999999999998
+        ],
+        "performance": [
+          73.150000000000006,
+          72.400000000000006,
+          61.950000000000003,
+          71.900000000000006
+        ],
+        "highImportance": [
+          true,
+          false,
+          false,
+          true
+        ],
+        "necessary": [
+          true,
+          true,
+          false,
+          true
+        ],
+        "priority": [
+          "Top priority",
+          "Bottleneck risk",
+          "Low priority",
+          "Top priority"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Image", "Expectation", "Value", "Satisfaction"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.1512098085184099, 0.13351452633140948],
+          [0.12870010623702355, 0.10323496472562922],
+          [0.015037129054409565, 0.0075185645272047618],
+          [0.14298136570529454, 0.12462222861666863]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Image",
+        "Expectation",
+        "Satisfaction"
+      ]
+    },
+    {
+      "name": "m1_ipma",
+      "modelId": "M1",
+      "entry": "ipma",
+      "target": "Loyalty",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": false,
+      "seed": 42,
+      "constructs": [
+        "Image",
+        "Expectation",
+        "Value",
+        "Satisfaction"
+      ],
+      "excludedInteractions": [],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.81665681791240474,
+          0.22667077356338716,
+          0.17394862687730547,
+          0.75124712755370515
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.51049697628274848,
+          0.14545996533670055,
+          0.16312290673681368,
+          0.51096191760146026
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          73.151656646260108,
+          72.401475520786306,
+          61.952420627211936,
+          71.899213429427931
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "importance": [
+          0.81669999999999998,
+          0.22670000000000001,
+          0.1739,
+          0.75119999999999998
+        ],
+        "performance": [
+          73.150000000000006,
+          72.400000000000006,
+          61.950000000000003,
+          71.900000000000006
+        ],
+        "highImportance": [
+          true,
+          false,
+          false,
+          true
+        ],
+        "necessary": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "priority": [
+          "Important driver",
+          "Low priority",
+          "Low priority",
+          "Important driver"
+        ]
+      },
+      "ncaEffectSizes": null,
+      "ncaNecessaryPredictors": null
+    },
+    {
+      "name": "m1_scale_1_5",
+      "modelId": "M1",
+      "entry": "cipma",
+      "target": "Loyalty",
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Image",
+        "Expectation",
+        "Value",
+        "Satisfaction"
+      ],
+      "excludedInteractions": [],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.81665681791240419,
+          0.22667077356338688,
+          0.17394862687730545,
+          0.75124712755370471
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.51049697628274848,
+          0.14545996533670055,
+          0.16312290673681368,
+          0.51096191760146026
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          164.59122745408524,
+          162.9033199217692,
+          139.39294641122686,
+          161.77323021621285
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Expectation",
+          "Value",
+          "Satisfaction"
+        ],
+        "importance": [
+          0.81669999999999998,
+          0.22670000000000001,
+          0.1739,
+          0.75119999999999998
+        ],
+        "performance": [
+          164.59,
+          162.90000000000001,
+          139.38999999999999,
+          161.77000000000001
+        ],
+        "highImportance": [
+          true,
+          false,
+          false,
+          true
+        ],
+        "necessary": [
+          true,
+          true,
+          false,
+          true
+        ],
+        "priority": [
+          "Top priority",
+          "Bottleneck risk",
+          "Low priority",
+          "Top priority"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Image", "Expectation", "Value", "Satisfaction"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.1512098085184099, 0.13351452633140948],
+          [0.12870010623702355, 0.10323496472562922],
+          [0.015037129054409565, 0.0075185645272047618],
+          [0.14298136570529454, 0.12462222861666863]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Image",
+        "Expectation",
+        "Satisfaction"
+      ]
+    },
+    {
+      "name": "m1_target_sat",
+      "modelId": "M1",
+      "entry": "cipma",
+      "target": "Satisfaction",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Image",
+        "Expectation",
+        "Value"
+      ],
+      "excludedInteractions": [],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value"
+        ],
+        "values": [
+          0.64155004242387137,
+          0.30172597704499432,
+          0.23154647851198637
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value"
+        ],
+        "values": [
+          0.58962842420002015,
+          0.28467868215994196,
+          0.31924670140299216
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Value"
+        ],
+        "values": [
+          73.151656646260108,
+          72.401475520786306,
+          61.952420627211936
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Expectation",
+          "Value"
+        ],
+        "importance": [
+          0.64159999999999995,
+          0.30170000000000002,
+          0.23150000000000001
+        ],
+        "performance": [
+          73.150000000000006,
+          72.400000000000006,
+          61.950000000000003
+        ],
+        "highImportance": [
+          true,
+          false,
+          false
+        ],
+        "necessary": [
+          true,
+          true,
+          false
+        ],
+        "priority": [
+          "Top priority",
+          "Bottleneck risk",
+          "Low priority"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Image", "Expectation", "Value"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.29167991467016557, 0.2612145124722165],
+          [0.19302163942564987, 0.19873159827087961],
+          [0, 0]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Image",
+        "Expectation"
+      ]
+    },
+    {
+      "name": "m2_mediation",
+      "modelId": "M2",
+      "entry": "cipma",
+      "target": "Loyalty",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Image",
+        "Expectation",
+        "Satisfaction"
+      ],
+      "excludedInteractions": [],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Satisfaction"
+        ],
+        "values": [
+          0.55965457061294732,
+          0.40292302761304216,
+          0.7475400940219139
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Satisfaction"
+        ],
+        "values": [
+          0.34937976698118545,
+          0.25832949823575646,
+          0.50336008737999449
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Expectation",
+          "Satisfaction"
+        ],
+        "values": [
+          73.081996466669892,
+          72.415255255010678,
+          72.065761459838356
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Expectation",
+          "Satisfaction"
+        ],
+        "importance": [
+          0.55969999999999998,
+          0.40289999999999998,
+          0.74750000000000005
+        ],
+        "performance": [
+          73.079999999999998,
+          72.420000000000002,
+          72.069999999999993
+        ],
+        "highImportance": [
+          false,
+          false,
+          true
+        ],
+        "necessary": [
+          true,
+          true,
+          true
+        ],
+        "priority": [
+          "Bottleneck risk",
+          "Bottleneck risk",
+          "Top priority"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Image", "Expectation", "Satisfaction"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.14570037486302984, 0.12922597462533544],
+          [0.13858488620507156, 0.12793494442453873],
+          [0.15085686620673203, 0.12757741781126433]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Image",
+        "Expectation",
+        "Satisfaction"
+      ]
+    },
+    {
+      "name": "m3_moderation",
+      "modelId": "M3",
+      "entry": "cipma",
+      "target": "Loyalty",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Image",
+        "Value",
+        "Satisfaction"
+      ],
+      "excludedInteractions": [
+        "Image*Value"
+      ],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.54700103365109021,
+          0.2396658491928253,
+          0.9654692820625419
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          0.34279129320579427,
+          0.22455137755539029,
+          0.65849531630436098
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Value",
+          "Satisfaction"
+        ],
+        "values": [
+          73.230812591571805,
+          62.015193544964191,
+          71.860246328998926
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Value",
+          "Satisfaction"
+        ],
+        "importance": [
+          0.54700000000000004,
+          0.2397,
+          0.96550000000000002
+        ],
+        "performance": [
+          73.230000000000004,
+          62.020000000000003,
+          71.859999999999999
+        ],
+        "highImportance": [
+          false,
+          false,
+          true
+        ],
+        "necessary": [
+          true,
+          false,
+          true
+        ],
+        "priority": [
+          "Bottleneck risk",
+          "Low priority",
+          "Top priority"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Image", "Value", "Satisfaction"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.15460539373569529, 0.12460405299563661],
+          [0.014803702287339278, 0.0074018511436696717],
+          [0.14033491436769213, 0.12350590241070063]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Image",
+        "Satisfaction"
+      ]
+    },
+    {
+      "name": "m3b_sat",
+      "modelId": "M3b",
+      "entry": "cipma",
+      "target": "Satisfaction",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Image",
+        "Value"
+      ],
+      "excludedInteractions": [
+        "Image*Value"
+      ],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Image",
+          "Value"
+        ],
+        "values": [
+          0.5661754403603515,
+          0.24776449474509857
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Image",
+          "Value"
+        ],
+        "values": [
+          0.52050919981046895,
+          0.34055043890287656
+        ]
+      },
+      "performance": {
+        "names": [
+          "Image",
+          "Value"
+        ],
+        "values": [
+          73.230133825554987,
+          62.015582423654202
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Image",
+          "Value"
+        ],
+        "importance": [
+          0.56620000000000004,
+          0.24779999999999999
+        ],
+        "performance": [
+          73.230000000000004,
+          62.020000000000003
+        ],
+        "highImportance": [
+          true,
+          false
+        ],
+        "necessary": [
+          true,
+          false
+        ],
+        "priority": [
+          "Top priority",
+          "Low priority"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Image", "Value"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.29615433612277137, 0.26106139413631535],
+          [0, 0]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Image"
+      ]
+    },
+    {
+      "name": "m4_hoc",
+      "modelId": "M4",
+      "entry": "cipma",
+      "target": "Loyalty",
+      "scaleMin": 1,
+      "scaleMax": 10,
+      "nca": true,
+      "seed": 123,
+      "constructs": [
+        "Quality",
+        "Satisfaction"
+      ],
+      "excludedInteractions": [],
+      "negativeWeightConstructs": [],
+      "importanceUnstd": {
+        "names": [
+          "Quality",
+          "Satisfaction"
+        ],
+        "values": [
+          1.016581677618466,
+          0.76383999417291271
+        ]
+      },
+      "importanceStd": {
+        "names": [
+          "Quality",
+          "Satisfaction"
+        ],
+        "values": [
+          0.56127506653065384,
+          0.51688594500475915
+        ]
+      },
+      "performance": {
+        "names": [
+          "Quality",
+          "Satisfaction"
+        ],
+        "values": [
+          72.872170644264116,
+          72.022887921589074
+        ]
+      },
+      "classification": {
+        "construct": [
+          "Quality",
+          "Satisfaction"
+        ],
+        "importance": [
+          1.0165999999999999,
+          0.76380000000000003
+        ],
+        "performance": [
+          72.870000000000005,
+          72.019999999999996
+        ],
+        "highImportance": [
+          true,
+          false
+        ],
+        "necessary": [
+          true,
+          true
+        ],
+        "priority": [
+          "Top priority",
+          "Bottleneck risk"
+        ]
+      },
+      "ncaEffectSizes": {
+        "rows": ["Quality", "Satisfaction"],
+        "cols": ["ce_fdh", "cr_fdh"],
+        "values": [
+          [0.25188050962548109, 0.17664849833755208],
+          [0.1482884554422482, 0.1266460889429889]
+        ]
+      },
+      "ncaNecessaryPredictors": [
+        "Quality",
+        "Satisfaction"
+      ]
+    }
+  ]
+}
