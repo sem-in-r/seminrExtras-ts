@@ -3,6 +3,14 @@
   "version": "0.1.1",
   "description": "Supplementary evaluation methods for SEMinR PLS-SEM models — CVPAT, PCM, cIPMA, COA, NCA, CTA-PLS, FIMIX-PLS, PLS-POS, and congruence testing, ported from the seminrExtras R package",
   "author": "Soumya Ray",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sem-in-r/seminrExtras-ts.git"
+  },
+  "homepage": "https://github.com/sem-in-r/seminrExtras-ts#readme",
+  "bugs": {
+    "url": "https://github.com/sem-in-r/seminrExtras-ts/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
