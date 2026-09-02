@@ -13,7 +13,8 @@
  * parity; the default path uses `mulberry32(seed)`, drawing one resample vector
  * per iteration. Correlation via `@compstats/core`'s one-matrix `cor(x)` (R's
  * `stats::cor(construct_scores)`, feature_congruence.R:128,151), R-ddof SD via
- * `rSd`, type-7 quantile CIs via `confInt` — all from the shared kernel.
+ * R's `sd`, type-7 quantile CIs via `confInt` — the first two from
+ * `@compstats/core`, the last from the shared kernel.
  */
 
 import {
@@ -26,8 +27,9 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
-import { cor, toRows } from "@compstats/core/linalg";
-import { asMatrix, confInt, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
+import { cor, fromRows, toRows } from "@compstats/core/linalg";
+import { sd } from "@compstats/core/stats";
+import { confInt, isNamedArgs, validateSeminrModel } from "./helpers.ts";
 import { ciColumnLabels, formatTable } from "./records.ts";
 
 const HEADING = "Congruence coefficient test (Franke, Sarstedt & Danks, 2021)";
@@ -75,7 +77,7 @@ function rhoDiagonal(model: PlsModel, names: string[]): number[] {
 function correlationWithRho(model: PlsModel): { names: string[]; mat: number[][] } {
   const scores = model.constructScores;
   const names = [...scores.cols];
-  const mat = toRows(cor(asMatrix(scores.values)));
+  const mat = toRows(cor(fromRows(scores.values)));
   const diag = rhoDiagonal(model, names);
   for (let i = 0; i < names.length; i++) mat[i]![i] = diag[i]!;
   return { names, mat };
@@ -155,7 +157,7 @@ export function congruenceTest(
     rowLabels.push(`${names[i]}  ->  ${names[j]}`);
     const original = congruence(origMat, i, j);
     const diff = threshold - Math.abs(original);
-    const bootSd = rSd(boot[i]![j]!);
+    const bootSd = sd(boot[i]![j]!);
     const tStat = bootSd < Number.EPSILON ? NaN : diff / bootSd;
     const [lower, upper] = confInt(boot, names, names, names[i]!, names[j]!, null, alpha);
     values.push([original, diff, bootSd, tStat, lower, upper]);

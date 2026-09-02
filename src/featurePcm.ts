@@ -34,10 +34,10 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
+import { mean } from "@compstats/core/stats";
 import {
   isNamedArgs,
   itemsOfConstruct,
-  rMean,
   validateForPrediction,
   validatePositiveInteger,
   validateSeminrModel,
@@ -288,8 +288,8 @@ function renderPrint(analysis: PcmAnalysis): string {
   ];
   for (const res of analysis.pcmResults) {
     // R `mean()` (`mean.default`, two-pass) — feature_pcm.R:361,364.
-    const avgRmse = rMean(res.pcmRmse);
-    const avgMae = rMean(res.pcmMae);
+    const avgRmse = mean(res.pcmRmse);
+    const avgMae = mean(res.pcmMae);
     lines.push(`  ${res.antecedent} -> ${res.mediator} -> ${res.target}`);
     lines.push(`    Avg PCM (RMSE): ${fmtNum(avgRmse, 7, 4)}  [${classifyPcm(avgRmse)}]`);
     lines.push(`    Avg PCM (MAE):  ${fmtNum(avgMae, 7, 4)}  [${classifyPcm(avgMae)}]`);

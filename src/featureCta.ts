@@ -18,7 +18,7 @@
  * p-values). R's progress/skip `message()`s are not ported; mode labels
  * reproduce R verbatim (a non-"A" raw mode — including reflective "C" and HOC
  * codes — renders as "Mode B (formative)", an R quirk). Boot_SD uses the shared
- * R-faithful `rSd`; T = Estimate/Boot_SD (NaN when SD < eps).
+ * R's `sd` (feature_cta.R:659); T = Estimate/Boot_SD (NaN when SD < eps).
  */
 
 import {
@@ -29,9 +29,9 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
-import { quantile } from "@compstats/core/stats";
-import { cov as csCov, toRows } from "@compstats/core/linalg";
-import { asMatrix, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
+import { quantile, sd } from "@compstats/core/stats";
+import { cov as csCov, fromRows, toRows } from "@compstats/core/linalg";
+import { isNamedArgs, validateSeminrModel } from "./helpers.ts";
 import { ciColumnLabels } from "./records.ts";
 
 const MIN_VALID_BOOTS = 10;
@@ -343,12 +343,16 @@ interface TestInfo {
  *
  * The conversion shim, not the computation: `@compstats/core` holds a matrix
  * column-major, and this package's tetrad machinery is row-major throughout.
+ * `fromRows` costs about 0.6 microseconds more per call than a hand-rolled
+ * `withDim` adopter and that difference does not reach `assessCta`'s wall
+ * clock; reach for `withDim` only if a caller ever wants to refill one buffer
+ * across replications rather than allocate per call.
  * The one-matrix form matters — the two-argument `cov(x, y)` walks each column
  * pair again and lands on different last bits, which is what this called until
  * `tests/fixtures/helpers/matstats.R` pinned the difference.
  */
 function cov(data: number[][]): number[][] {
-  return toRows(csCov(asMatrix(data)));
+  return toRows(csCov(fromRows(data)));
 }
 
 /** Column-major slice of pre-selected data by resampled row indices. */
@@ -590,7 +594,7 @@ export function assessCta(
     for (let tIdx = 0; tIdx < nTetrads; tIdx++) {
       const bootVals = bootMat.map((row) => row[tIdx]!).filter((v) => !Number.isNaN(v));
       if (bootVals.length < MIN_VALID_BOOTS) continue;
-      const bootSd = rSd(bootVals);
+      const bootSd = sd(bootVals);
       const tValue = bootSd < eps ? NaN : orig[tIdx]! / bootSd;
       let countGe = 0;
       let countLe = 0;

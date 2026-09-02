@@ -45,7 +45,7 @@
   ],
   "license": "GPL-3.0-only",
   "dependencies": {
-    "@compstats/core": "^0.6.1",
+    "@compstats/core": "^0.7.0",
     "@seminr/core": "^0.4.0"
   },
   "devDependencies": {

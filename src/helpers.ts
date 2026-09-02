@@ -4,7 +4,7 @@
  *
  * Validation, endogenous-construct extraction, CVPAT loss calculation, and the
  * CVPAT bootstrap significance test. Numeric semantics follow R exactly (plan
- * F8): R-ddof statistics via {@link seqSum}/{@link rMean}/{@link rSd}, and
+ * F8): R's `mean` and `sd` from `@compstats/core`, plain sums via {@link seqSum}, and
  * type-7 quantiles via `@compstats/core`'s `quantile`.
  *
  * Stochastic entry points accept injectable `draws` (the exact resampling index
@@ -14,8 +14,7 @@
  */
 
 import { mulberry32, type Dataset, type PlsModel } from "@seminr/core";
-import { pt, quantile } from "@compstats/core/stats";
-import { withDim, type Matrix } from "@compstats/core/linalg";
+import { mean, pt, quantile, sd } from "@compstats/core/stats";
 
 // =============================================================================
 // Validation helpers
@@ -153,51 +152,6 @@ export function calculateLvLosses(
 }
 
 // =============================================================================
-// Representation boundary
-// =============================================================================
-
-/**
- * A row-major `number[][]` adopted as a `@compstats/core` column-major matrix.
- *
- * **This is scheduled for deletion — see the note below before keeping it.**
- *
- * `fromRows` does the same job. This exists because in `@compstats/core` 0.6.1
- * it did the job too slowly for a bootstrap loop: on the shape CTA resamples
- * 2000 times over (250 x 5), `fromRows` cost 24.8 microseconds against the 7.9
- * the covariance itself takes, and was the whole of a 3.3x regression when the
- * covariance moved upstream. Filling the buffer in one typed pass costs about
- * 2 and put the round trip back at the hand-written loop it replaced.
- *
- * Upstream then found the cause and fixed it: `fromRows` was allocating a
- * `Float64Array` per row on the way in, which was 23.2 of its 23.5
- * microseconds. In 0.7.0 it costs 3.7 against this function's 3.1, and the
- * remaining gap is `fromRows`' ragged-row validation — worth paying. So the
- * reason this function exists expires with that upgrade: **re-measure
- * `assessCta` with plain `fromRows` and delete this if the difference is
- * noise, which upstream expects and this package should verify rather than
- * assume.**
- *
- * Verified bit-identical to the `fromRows` route, so this is a cost decision
- * and never a numeric one: the matrix it returns is the same matrix.
- *
- * `withDim` adopts the buffer rather than copying it, so nothing may write to
- * `buf` after this returns. That aliasing is `withDim`'s real purpose and the
- * one reason to keep a hand-rolled adopter: refilling one buffer across
- * replications and never allocating at all. This function does not do that
- * today — it allocates per call, exactly as `fromRows` does.
- */
-export function asMatrix(rows: readonly (readonly number[])[]): Matrix {
-  const nrow = rows.length;
-  const ncol = nrow > 0 ? rows[0]!.length : 0;
-  const buf = new Float64Array(nrow * ncol);
-  for (let i = 0; i < nrow; i++) {
-    const row = rows[i]!;
-    for (let j = 0; j < ncol; j++) buf[j * nrow + i] = row[j]!;
-  }
-  return withDim(buf, { nrow, ncol });
-}
-
-// =============================================================================
 // Numeric core — R-faithful accumulation (plan F8)
 // =============================================================================
 
@@ -214,48 +168,24 @@ export function seqSum(x: readonly number[]): number {
 }
 
 /**
- * R `mean.default`: sequential sum/n plus a second-pass correction term.
+ * R's `mean.default` and `var`/`sd`, delegated to `@compstats/core`.
  *
- * `bootstrapCvpat` compares bootstrap means against `+/-orgDBar` with strict
- * inequalities; a one-ulp difference from a naive mean can flip a count.
- * Reproducing R's accumulation keeps those discrete counts bit-compatible.
+ * Both were implemented here through v0.1.1 and both are gone: upstream's
+ * `mean` is R's `do_mean` including the correcting second pass, and its `sd`
+ * centres on that same mean, as `cov.c`'s `MEAN` macro does. The conformance
+ * fixture `tests/fixtures/helpers/arith.json` pins both against R as exact
+ * doubles, so the delegation is verified rather than assumed.
+ *
+ * `seqSum` stays. It is not a mean and has callers that want a plain
+ * left-to-right sum in its own right — `cart.ts`'s node statistics and
+ * `featurePos.ts`'s residual sums — and R's third mean, `colMeans`
+ * (`array.c` `do_colsum`), is a single uncorrected pass built on exactly this.
+ * Do not route a `colMeans` site through `mean`.
  */
-export function rMean(x: readonly number[]): number {
-  const n = x.length;
-  const s = seqSum(x) / n;
-  const corr = x.map((v) => v - s);
-  return s + seqSum(corr) / n;
-}
-
-/**
- * R `sd`/`var` (`stats/src/cov.c`): {@link rMean} centre, sequential SSQ, ddof 1.
- *
- * The centre is the **corrected** two-pass mean. `cov.c`'s `MEAN` macro is
- * `do_mean`'s body, so `sd` and `mean.default` accumulate their centre the same
- * way — they are not the single-pass `colMeans` (`array.c` `do_colsum`), which
- * is the third of R's three means and the one {@link seqSum} alone gives.
- *
- * Through v0.1.1 this centred on `seqSum(x) / n` and documented that as R's
- * behaviour. It was wrong at all five call sites, each of which ports a
- * two-pass R routine (`t.test`, `var`, `sd`), and the error reached the last
- * bits of every bootstrap SD and t-statistic in the package. Measured against
- * R 4.5.3 over 2000 vectors: centred on the uncorrected mean, 355 of 2000 were
- * not bit-identical to R's `sd` and 7 were more than 1 ulp out; centred here,
- * 9 differ and none by more than 1 ulp — the residue being the fused multiply
- * add in R's compiled loop rather than the centre.
- *
- * `tests/helpers.test.ts`'s "R arithmetic conformance" block pins both halves.
- */
-export function rSd(x: readonly number[]): number {
-  const n = x.length;
-  const m = rMean(x);
-  const sq = x.map((v) => (v - m) * (v - m));
-  return Math.sqrt(seqSum(sq) / (n - 1));
-}
 
 function pairedTStat(diff: readonly number[], mu = 0): number {
   const n = diff.length;
-  return (rMean(diff) - mu) / (rSd(diff) / Math.sqrt(n));
+  return (mean(diff) - mu) / (sd(diff) / Math.sqrt(n));
 }
 
 // =============================================================================
@@ -351,7 +281,7 @@ export function bootstrapCvpat(
   const n = lossM1.length;
   const d = lossM1.map((v, i) => lossM2[i]! - v);
   const orgTTest = pairedTStat(d);
-  const orgDBar = rMean(d);
+  const orgDBar = mean(d);
   const dNull = d.map((v) => v - orgDBar);
 
   let pairIdx: number[][];
@@ -375,10 +305,10 @@ export function bootstrapCvpat(
   for (let b = 0; b < nboot; b++) {
     const bootDiff = pairIdx[b]!.map((i) => d[i]!);
     tStat[b] = pairedTStat(bootDiff, orgDBar);
-    bootDBar[b] = rMean(dnullIdx[b]!.map((i) => dNull[i]!));
+    bootDBar[b] = mean(dnullIdx[b]!.map((i) => dNull[i]!));
   }
 
-  const std = rSd(bootDBar);
+  const std = sd(bootDBar);
   let tStatBootVar: number;
   if (Number.isNaN(std) || std < Number.EPSILON) {
     console.warn("Bootstrap variance near zero; t-statistic set to NA");
@@ -405,13 +335,13 @@ export function bootstrapCvpat(
   } else {
     pPercT = greaterPercentileP(tStat, orgTTest, nboot);
     pPercD = greaterPercentileP(bootDBar, orgDBar, nboot);
-    // R writes this as `pt(t, n - 1, lower.tail = FALSE)` (helpers.R:220) --
-    // the upper tail as a real argument, not one minus the lower. This is the
-    // subtraction R avoids, kept only because `@compstats/core`'s `pt` has no
-    // `lowerTail` option yet (requested; `pnorm` and `pchisq` both take one).
-    // It costs the far tail: at df 249 and t = 10 this gives exactly 0 where R
-    // gives 2.6e-20. Route it through the option as soon as it lands.
-    pVarT = Number.isNaN(tStatBootVar) ? NaN : 1 - pt(tStatBootVar, n - 1);
+    // R: `pt(t, n - 1, lower.tail = FALSE)` (helpers.R:220) -- the upper tail as
+    // a real argument, not one minus the lower. The difference is the far tail:
+    // at df 249 and t = 10 the subtraction gives exactly 0 where this gives
+    // 2.6e-20, so a strongly one-sided CVPAT would have printed p = 0.
+    pVarT = Number.isNaN(tStatBootVar)
+      ? NaN
+      : pt(tStatBootVar, n - 1, undefined, { lowerTail: false });
   }
 
   return makeCvpatBoot(orgTTest, pPercT, tStatBootVar, pVarT, pPercD);

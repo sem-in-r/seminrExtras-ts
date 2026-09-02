@@ -24,8 +24,9 @@
  */
 
 import { namedMatrix, type NamedMatrix, type PlsModel } from "@seminr/core";
-import { solve, toRows } from "@compstats/core/linalg";
-import { asMatrix, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
+import { fromRows, solve, toRows } from "@compstats/core/linalg";
+import { sd } from "@compstats/core/stats";
+import { isNamedArgs, validateSeminrModel } from "./helpers.ts";
 import { assessNca, type NcaAnalysis } from "./featureNca.ts";
 import { formatTable, gFormat } from "./records.ts";
 
@@ -188,7 +189,7 @@ export function computeTotalEffects(pathCoefMatrix: readonly (readonly number[])
   // `solve(a)` with no right-hand side is R's `solve(a)`: the inverse. This
   // was a column-by-column solve against the identity, which is the same
   // computation spelled out k times.
-  const inverse = toRows(solve(asMatrix(iMinusB)));
+  const inverse = toRows(solve(fromRows(iMinusB)));
   return inverse.map((row, i) => row.map((v, j) => v - (i === j ? 1 : 0)));
 }
 
@@ -203,7 +204,7 @@ function pathCoefBlock(model: PlsModel, constructs: readonly string[]): number[]
 function sdNoNa(col: readonly number[]): number {
   const vals = col.filter((v) => !Number.isNaN(v));
   if (vals.length < 2) return NaN;
-  return rSd(vals);
+  return sd(vals);
 }
 
 function stdTotalEffects(model: PlsModel, constructs: readonly string[]): NamedMatrix {

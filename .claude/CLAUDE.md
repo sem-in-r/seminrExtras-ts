@@ -110,8 +110,10 @@ flag and its test asserts it first.
   `helpers.ts`'s `asMatrix`, never `fromRows`: on a bootstrap-loop shape `fromRows` costs three times
   the computation it feeds.
 - **R has three means, and which one a site needs is a parity decision**: `mean.default`
-  (`summary.c`, two-pass) is `rMean`; `var`/`sd` (`cov.c`, the same body) is `rSd`; `colMeans`
-  (`array.c` `do_colsum`, one pass) is the private helper in `featureCvpat.ts`. Every call site names
+  (`summary.c`, two-pass) and `var`/`sd` (`cov.c`, the same body) are `@compstats/core`'s `mean` and
+  `sd`; `colMeans` (`array.c` `do_colsum`, one pass) is the private helper in `featureCvpat.ts`, and
+  `helpers.ts`'s `seqSum` is the plain sum it and `cart.ts` are built on — never route a `colMeans`
+  site through `mean`. Every call site names
   the R function it follows, and `tests/fixtures/helpers/arith.R` pins all three as exact doubles.
   Likewise `cor(x)`/`cov(x)`: R's one-matrix form is not its two-argument form, and this package
   needs the one-matrix one (`matstats.R`).

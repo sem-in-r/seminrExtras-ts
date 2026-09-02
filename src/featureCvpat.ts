@@ -30,11 +30,11 @@ import {
   getEndogenousItems,
   isNamedArgs,
   overallLoss,
-  rMean,
   validateForPrediction,
   type CvpatBoot,
   type CvpatDraws,
 } from "./helpers.ts";
+import { mean } from "@compstats/core/stats";
 import { formatTable } from "./records.ts";
 
 const ASSESS_DESCRIPTION = "CVPAT as per Sharma et al. (2023).";
@@ -128,10 +128,11 @@ function residualsDataset(residuals: NamedMatrix, endoMvs: string[]): Dataset {
 /**
  * R `colMeans` (`array.c` `do_colsum`): ONE pass, no correction.
  *
- * Deliberately not {@link rMean}. R has three means and this is the only site
+ * Deliberately not `@compstats/core`'s `mean`. R has three means and this is
+ * the only site
  * in the package that wants the uncorrected one — `feature_cvpat.R:204` calls
  * `colMeans()`, where `:231` calls `mean()` a few lines later. Routing this
- * through `rMean` would break parity in the opposite direction; the rule is
+ * through `mean` would break parity in the opposite direction; the rule is
  * pinned by "R's colMeans is the uncorrected pass" in `tests/helpers.test.ts`.
  */
 function colMeans(losses: Dataset): number[] {
@@ -274,8 +275,8 @@ export function assessCvpat(
     plsMeans,
     colMeans(lvLossesLm),
     lmCvpat,
-    rMean(plsOverall),
-    rMean(lmOverall),
+    mean(plsOverall),
+    mean(lmOverall),
     plsVLm,
     ["PLS Loss", "LM Loss"],
   );
@@ -284,8 +285,8 @@ export function assessCvpat(
     plsMeans,
     colMeans(lvLossesIa),
     iaCvpat,
-    rMean(plsOverall),
-    rMean(iaOverall),
+    mean(plsOverall),
+    mean(iaOverall),
     plsVIa,
     ["PLS Loss", "IA Loss"],
   );
@@ -409,8 +410,8 @@ export function assessCvpatCompare(
     colMeans(lossOne),
     colMeans(lossTwo),
     perConstruct,
-    rMean(overallOne),
-    rMean(overallTwo),
+    mean(overallOne),
+    mean(overallTwo),
     overallBoot,
     ["Base Model Loss", "Alt Model Loss"],
   );
