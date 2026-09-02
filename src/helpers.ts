@@ -159,19 +159,32 @@ export function calculateLvLosses(
 /**
  * A row-major `number[][]` adopted as a `@compstats/core` column-major matrix.
  *
- * `fromRows` does the same job, and this exists only because it does it too
- * slowly for a bootstrap loop. On the shape CTA resamples 2000 times over
- * (250 x 5), `fromRows` costs 24.8 microseconds against the 7.9 the covariance
- * itself takes — three times the computation, and the whole of a 3.3x
- * regression when the covariance moved to `@compstats/core`. Filling the
- * buffer in one typed pass costs about 2 and lands the round trip back at the
- * hand-written loop it replaced.
+ * **This is scheduled for deletion — see the note below before keeping it.**
+ *
+ * `fromRows` does the same job. This exists because in `@compstats/core` 0.6.1
+ * it did the job too slowly for a bootstrap loop: on the shape CTA resamples
+ * 2000 times over (250 x 5), `fromRows` cost 24.8 microseconds against the 7.9
+ * the covariance itself takes, and was the whole of a 3.3x regression when the
+ * covariance moved upstream. Filling the buffer in one typed pass costs about
+ * 2 and put the round trip back at the hand-written loop it replaced.
+ *
+ * Upstream then found the cause and fixed it: `fromRows` was allocating a
+ * `Float64Array` per row on the way in, which was 23.2 of its 23.5
+ * microseconds. In 0.7.0 it costs 3.7 against this function's 3.1, and the
+ * remaining gap is `fromRows`' ragged-row validation — worth paying. So the
+ * reason this function exists expires with that upgrade: **re-measure
+ * `assessCta` with plain `fromRows` and delete this if the difference is
+ * noise, which upstream expects and this package should verify rather than
+ * assume.**
  *
  * Verified bit-identical to the `fromRows` route, so this is a cost decision
  * and never a numeric one: the matrix it returns is the same matrix.
  *
  * `withDim` adopts the buffer rather than copying it, so nothing may write to
- * `buf` after this returns.
+ * `buf` after this returns. That aliasing is `withDim`'s real purpose and the
+ * one reason to keep a hand-rolled adopter: refilling one buffer across
+ * replications and never allocating at all. This function does not do that
+ * today — it allocates per call, exactly as `fromRows` does.
  */
 export function asMatrix(rows: readonly (readonly number[])[]): Matrix {
   const nrow = rows.length;
