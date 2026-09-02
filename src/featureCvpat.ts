@@ -30,6 +30,7 @@ import {
   getEndogenousItems,
   isNamedArgs,
   overallLoss,
+  rMean,
   validateForPrediction,
   type CvpatBoot,
   type CvpatDraws,
@@ -124,6 +125,15 @@ function residualsDataset(residuals: NamedMatrix, endoMvs: string[]): Dataset {
   return { columns: endoMvs, values: residuals.values.map((row) => idx.map((j) => row[j]!)) };
 }
 
+/**
+ * R `colMeans` (`array.c` `do_colsum`): ONE pass, no correction.
+ *
+ * Deliberately not {@link rMean}. R has three means and this is the only site
+ * in the package that wants the uncorrected one — `feature_cvpat.R:204` calls
+ * `colMeans()`, where `:231` calls `mean()` a few lines later. Routing this
+ * through `rMean` would break parity in the opposite direction; the rule is
+ * pinned by "R's colMeans is the uncorrected pass" in `tests/helpers.test.ts`.
+ */
 function colMeans(losses: Dataset): number[] {
   const n = losses.values.length;
   return losses.columns.map((_, j) => {
@@ -131,12 +141,6 @@ function colMeans(losses: Dataset): number[] {
     for (const row of losses.values) sum += row[j]!;
     return sum / n;
   });
-}
-
-function mean(x: readonly number[]): number {
-  let sum = 0;
-  for (const v of x) sum += v;
-  return sum / x.length;
 }
 
 /** Build the 5-column CVPAT table: losses, diff, Boot T, Boot P (+ Overall row). */
@@ -262,14 +266,16 @@ export function assessCvpat(
   const iaCvpat = cvpatPerConstruct(lvLossesPls, lvLossesIa, testtype, nboot, blockOpts(k));
   const lmCvpat = cvpatPerConstruct(lvLossesPls, lvLossesLm, testtype, nboot, blockOpts(k));
 
+  // R `mean()` (`mean.default`, two-pass) for the Overall row, R `colMeans`
+  // (one pass) for the per-construct rows — feature_cvpat.R:204 vs :231-233.
   const plsMeans = colMeans(lvLossesPls);
   const matLm = withOverall(
     endoLvs,
     plsMeans,
     colMeans(lvLossesLm),
     lmCvpat,
-    mean(plsOverall),
-    mean(lmOverall),
+    rMean(plsOverall),
+    rMean(lmOverall),
     plsVLm,
     ["PLS Loss", "LM Loss"],
   );
@@ -278,8 +284,8 @@ export function assessCvpat(
     plsMeans,
     colMeans(lvLossesIa),
     iaCvpat,
-    mean(plsOverall),
-    mean(iaOverall),
+    rMean(plsOverall),
+    rMean(iaOverall),
     plsVIa,
     ["PLS Loss", "IA Loss"],
   );
@@ -403,8 +409,8 @@ export function assessCvpatCompare(
     colMeans(lossOne),
     colMeans(lossTwo),
     perConstruct,
-    mean(overallOne),
-    mean(overallTwo),
+    rMean(overallOne),
+    rMean(overallTwo),
     overallBoot,
     ["Base Model Loss", "Alt Model Loss"],
   );
