@@ -181,10 +181,28 @@ export function rMean(x: readonly number[]): number {
   return s + seqSum(corr) / n;
 }
 
-/** R `sd`/`var` (cov.c): sequential UNcorrected mean, sequential SSQ, ddof 1. */
+/**
+ * R `sd`/`var` (`stats/src/cov.c`): {@link rMean} centre, sequential SSQ, ddof 1.
+ *
+ * The centre is the **corrected** two-pass mean. `cov.c`'s `MEAN` macro is
+ * `do_mean`'s body, so `sd` and `mean.default` accumulate their centre the same
+ * way — they are not the single-pass `colMeans` (`array.c` `do_colsum`), which
+ * is the third of R's three means and the one {@link seqSum} alone gives.
+ *
+ * Through v0.1.1 this centred on `seqSum(x) / n` and documented that as R's
+ * behaviour. It was wrong at all five call sites, each of which ports a
+ * two-pass R routine (`t.test`, `var`, `sd`), and the error reached the last
+ * bits of every bootstrap SD and t-statistic in the package. Measured against
+ * R 4.5.3 over 2000 vectors: centred on the uncorrected mean, 355 of 2000 were
+ * not bit-identical to R's `sd` and 7 were more than 1 ulp out; centred here,
+ * 9 differ and none by more than 1 ulp — the residue being the fused multiply
+ * add in R's compiled loop rather than the centre.
+ *
+ * `tests/helpers.test.ts`'s "R arithmetic conformance" block pins both halves.
+ */
 export function rSd(x: readonly number[]): number {
   const n = x.length;
-  const m = seqSum(x) / n;
+  const m = rMean(x);
   const sq = x.map((v) => (v - m) * (v - m));
   return Math.sqrt(seqSum(sq) / (n - 1));
 }

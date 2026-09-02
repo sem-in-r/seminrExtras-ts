@@ -312,3 +312,83 @@ describe("numeric core", () => {
     expect(isClose(rSd([2, 4, 4, 4, 5, 5, 7, 9]), 2.138089935299395)).toBe(true);
   });
 });
+
+// --- R arithmetic conformance ------------------------------------------------
+
+/**
+ * Which of R's three means each routine follows, pinned as exact doubles.
+ *
+ * R's three means are different C routines with different accumulation:
+ * `mean.default` (`summary.c` `do_mean`) makes a correcting second pass;
+ * `var`/`sd` (`cov.c`'s `MEAN` macro) has the same body; `colMeans`
+ * (`array.c` `do_colsum`) makes one pass and stops. Which one a site needs is
+ * a parity decision, and nothing at a call site used to say which it meant —
+ * which is how `rSd` shipped through v0.1.1 centred on the wrong one.
+ *
+ * `toBe`, not a tolerance: the fixture's `longDouble` is false, so R's
+ * accumulators are plain doubles and every value here is reproducible in
+ * float64. Each pair asserts both halves — that the R-correct form is exact,
+ * and that the naive form is *not* — so a future failure says which half
+ * moved rather than only that something did. See `arith.R` for the seed.
+ */
+describe("R arithmetic conformance", () => {
+  const arith = JSON.parse(
+    readFileSync(join(FIXTURES_DIR, "helpers", "arith.json"), "utf8"),
+  ) as {
+    longDouble: boolean;
+    x: number[];
+    mean: number;
+    sd: number;
+    var: number;
+    mat: number[][];
+    colMeans: number[];
+  };
+
+  /** The uncorrected single pass — R's `colMeans`, and the wrong centre for `sd`. */
+  const plainMean = (v: readonly number[]): number => seqSum(v) / v.length;
+
+  test("the fixture is bit-reproducible on this platform", () => {
+    expect(arith.longDouble).toBe(false);
+  });
+
+  test("rMean is R's mean.default, bit for bit", () => {
+    expect(rMean(arith.x)).toBe(arith.mean);
+  });
+
+  test("the uncorrected sum/n is not R's mean — this is why rMean exists", () => {
+    expect(plainMean(arith.x)).not.toBe(arith.mean);
+  });
+
+  test("rSd is R's sd, bit for bit", () => {
+    expect(rSd(arith.x)).toBe(arith.sd);
+  });
+
+  test("centring on the uncorrected mean is not R's sd", () => {
+    const centre = plainMean(arith.x);
+    const naive = Math.sqrt(
+      seqSum(arith.x.map((v) => (v - centre) * (v - centre))) / (arith.x.length - 1),
+    );
+    expect(naive).not.toBe(arith.sd);
+  });
+
+  test("rSd squared is R's var", () => {
+    expect(rSd(arith.x) ** 2).toBeCloseTo(arith.var, 10);
+  });
+
+  /**
+   * The third mean, pinned as a rule rather than through a function.
+   *
+   * `featureCvpat.ts`'s private `colMeans` is not exported, so this pins the
+   * accumulation R's `colMeans` uses and the call site carries a comment
+   * pointing here. Routing that site through `rMean` would break it, and this
+   * is the assertion that would catch it.
+   */
+  test("R's colMeans is the uncorrected pass, not mean.default", () => {
+    const columns = arith.colMeans.map((_, j) => arith.mat.map((row) => row[j]!));
+    for (const [j, column] of columns.entries()) {
+      expect(plainMean(column)).toBe(arith.colMeans[j]!);
+    }
+    // At least one column separates the two, or the assertion above proves nothing.
+    expect(columns.some((column) => rMean(column) !== plainMean(column))).toBe(true);
+  });
+});
