@@ -13,7 +13,7 @@
  */
 
 import type { NamedMatrix, SvgPlot } from "@seminr/core";
-import { quantile } from "@compstats/core/stats";
+import { mean, quantile } from "@compstats/core/stats";
 import type { CipmaAnalysis } from "../featureCipma.ts";
 import { groupScoreMeans, type CoaAnalysis } from "../featureCoa.ts";
 import type { CtaAnalysis } from "../featureCta.ts";
@@ -248,10 +248,9 @@ export function plotCipma(record: CipmaAnalysis, options: PlotCipmaOptions = {})
 
   const fig = new SvgFigure(DEVICE_SIZE, DEVICE_SIZE);
   const f = frame(DEVICE, xlim, ylim);
-  const meanOf = (v: readonly number[]): number => {
-    const fin = finiteOf(v);
-    return fin.reduce((a, b) => a + b, 0) / fin.length;
-  };
+  // R `mean(imp, na.rm = TRUE)` / `mean(perf, ...)` (feature_cipma.R:766-767) —
+  // doubles, so R's two-pass `mean.default`.
+  const meanOf = (v: readonly number[]): number => mean(finiteOf(v));
   axes(fig, f, {
     xLabel:
       importanceMetric === "unstandardized"

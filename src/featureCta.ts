@@ -29,7 +29,7 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
-import { quantile, sd } from "@compstats/core/stats";
+import { mean, quantile, sd } from "@compstats/core/stats";
 import { cov as csCov, fromRows, toRows } from "@compstats/core/linalg";
 import { isNamedArgs, validateSeminrModel } from "./helpers.ts";
 import { ciColumnLabels } from "./records.ts";
@@ -596,20 +596,21 @@ export function assessCta(
       if (bootVals.length < MIN_VALID_BOOTS) continue;
       const bootSd = sd(bootVals);
       const tValue = bootSd < eps ? NaN : orig[tIdx]! / bootSd;
+      // R `mean(boot_vals >= 0)` (feature_cta.R:676-677) — a mean over a
+      // LOGICAL vector, which takes R's INTSXP branch: one uncorrected pass,
+      // i.e. exactly count/n. Not `mean`, which would add the correction.
       let countGe = 0;
       let countLe = 0;
-      let sum = 0;
       for (const v of bootVals) {
         if (v >= 0) countGe++;
         if (v <= 0) countLe++;
-        sum += v;
       }
       const pValue = 2 * Math.min(countGe / bootVals.length, countLe / bootVals.length);
       pValues[tIdx] = pValue;
       values[tIdx] = [
         orig[tIdx]!,
         tValue,
-        sum / bootVals.length,
+        mean(bootVals), // R `mean(boot_vals)` (feature_cta.R:658) — doubles, so two-pass
         bootSd,
         quantile(bootVals, alphaHalf),
         quantile(bootVals, 1 - alphaHalf),

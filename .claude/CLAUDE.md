@@ -114,11 +114,23 @@ flag and its test asserts it first.
   this package and is free for seminr-ts to retire. Cross the row-major/column-major boundary with
   `helpers.ts`'s `asMatrix`, never `fromRows`: on a bootstrap-loop shape `fromRows` costs three times
   the computation it feeds.
-- **R has three means, and which one a site needs is a parity decision**: `mean.default`
-  (`summary.c`, two-pass) and `var`/`sd` (`cov.c`, the same body) are `@compstats/core`'s `mean` and
-  `sd`; `colMeans` (`array.c` `do_colsum`, one pass) is the private helper in `featureCvpat.ts`, and
-  `helpers.ts`'s `seqSum` is the plain sum it and `cart.ts` are built on — never route a `colMeans`
-  site through `mean`. Every call site names
+- **R has FOUR means, and which one a site needs is a parity decision.** Read the R line *and* the
+  storage mode of its argument before porting a `mean()`:
+  - `mean.default` on a **double** vector (`summary.c` `do_mean`, REALSXP branch) makes a correcting
+    second pass → `@compstats/core`'s `mean`.
+  - `mean.default` on an **integer or logical** vector takes the INTSXP branch — **one uncorrected
+    pass**, i.e. exactly `sum/n`. Both bundled datasets are integer throughout
+    (`sapply(mobi, storage.mode)`), and `mean(x >= 0)` over a logical is this branch too. On `mobi`
+    the two branches differ on 8 of 24 columns.
+  - `var`/`sd` (`cov.c`'s `MEAN` macro) is the same corrected body, and R coerces first, so integer
+    and double agree → `@compstats/core`'s `sd`. **`sd` never needs the storage-mode question.**
+  - `colMeans`/`rowMeans` (`array.c` `do_colsum`) is one uncorrected pass → the private helper in
+    `featureCvpat.ts` and the plain `colSum / n` in `featureCipma.ts`; `helpers.ts`'s `seqSum` is
+    what they and `cart.ts` are built on.
+
+  Every site names the R function it follows in a comment. The tell is always the same: the branches
+  differ by ulps, so no feature-level assertion can see it, and the delegation looks right because
+  the *name* matches. Four instances found across three packages so far. Every call site names
   the R function it follows, and `tests/fixtures/helpers/arith.R` pins all three as exact doubles.
   Likewise `cor(x)`/`cov(x)`: R's one-matrix form is not its two-argument form, and this package
   needs the one-matrix one (`matstats.R`).
