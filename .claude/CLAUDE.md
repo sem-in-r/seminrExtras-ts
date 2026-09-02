@@ -19,7 +19,7 @@ equivalent, or a compatible interchange format), since none of these features ma
 ### Features to port (see `../seminrExtras/README.md` for full descriptions and citations)
 
 | Area | R entry points |
-|---|---|
+| --- | --- |
 | CVPAT (Cross-Validated Predictive Ability Test) | `assess_cvpat()`, `assess_cvpat_compare()` |
 | PCM (Predictive Contribution of the Mediator) | `assess_pcm()` |
 | cIPMA / IPMA (Importance-Performance Map + NCA) | `assess_cipma()`, `assess_ipma()` |
@@ -103,3 +103,26 @@ the 10 R `plot.*` methods and all 17 demos.
   (`higherComposite` is two-stage only) — the registry marks M4r unsupported and one test is skipped.
 
 npm publication is user-owned and has NOT happened.
+
+## Plans
+
+Branch plans and their working docs live in `.claude/plans/` (gitignored, synced across machines by
+Sideways). `CLAUDE.local.md` `@`-includes the active one.
+
+**One folder per work stream**, named `NNN-PURPOSE-slug`:
+
+- `NNN` — zero-padded sequence starting at `001`. It strictly increments and is **never reused**;
+  list the directory and take the next unused number.
+- `PURPOSE` — uppercase tag for the kind of document that started the stream (`PLAN`, `BUGFIX`,
+  `REFACTOR`, `HOTFIX`). It does not change when a second kind of document joins the folder.
+- `slug` — short kebab-case name, normally the branch name with `/` replaced by `-`.
+
+**Inside the folder**: the main document takes the name of its kind (`PLAN.md`, `BUGFIX.md`). When a
+folder holds two or more, prefix each with a letter giving the reading order (`a-PLAN.md`,
+`b-BUGFIX.md`) — a folder gains letters the moment a second document arrives. Supporting files keep a
+kind tag and take no letter (`SKETCHES.html`, `ASSET-og-card.html`). A reference within a folder uses
+the bare filename; a reference across folders uses the full path from the repository root.
+
+When a branch merges, mark its plan closed rather than deleting it: a
+`> **CLOSED** (date): merged to <branch> as <sha>` note under the title, plus a final Current State
+entry. Closed plans keep their number.
