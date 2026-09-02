@@ -24,6 +24,7 @@ import {
   validateSeminrModel,
 } from "./helpers.ts";
 import { mulberry32 } from "@seminr/core";
+import { mean } from "@compstats/core/stats";
 import { nonzeroPathLines } from "./records.ts";
 
 const EPS = Number.EPSILON;
@@ -639,7 +640,8 @@ export function assessPosCompare(
       fitRows.push({
         k,
         sumR2: sol.objective,
-        avgR2PerSegment: colSums.reduce((a, b) => a + b, 0) / colSums.length,
+        // R `mean(colSums(...))` (feature_pos.R:577) — doubles, so two-pass.
+        avgR2PerSegment: mean(colSums),
         converged: sol.converged,
         iterations: sol.iterations,
       });

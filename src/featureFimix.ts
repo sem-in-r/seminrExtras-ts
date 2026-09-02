@@ -16,7 +16,7 @@
  */
 
 import { mulberry32, namedMatrix, type NamedMatrix, type PlsModel } from "@seminr/core";
-import { solve } from "@seminr/core/math";
+import { fromRows, solve } from "@compstats/core/linalg";
 import { isNamedArgs, validatePositiveInteger, validateSeminrModel } from "./helpers.ts";
 import { nonzeroPathLines } from "./records.ts";
 
@@ -96,7 +96,7 @@ function weightedOls(
   }
   let beta: number[];
   try {
-    beta = solve(xtwx, xtwy);
+    beta = solve(fromRows(xtwx), xtwy);
   } catch {
     return [new Array(p).fill(NaN), NaN];
   }

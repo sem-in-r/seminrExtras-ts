@@ -4,8 +4,8 @@
  *
  * Validation, endogenous-construct extraction, CVPAT loss calculation, and the
  * CVPAT bootstrap significance test. Numeric semantics follow R exactly (plan
- * F8): R-ddof statistics via {@link seqSum}/{@link rMean}/{@link rSd}, and
- * type-7 quantiles via `@seminr/core/math`'s `quantile`.
+ * F8): R's `mean` and `sd` from `@compstats/core`, plain sums via {@link seqSum}, and
+ * type-7 quantiles via `@compstats/core`'s `quantile`.
  *
  * Stochastic entry points accept injectable `draws` (the exact resampling index
  * streams) for bit-level parity with R fixtures; the default path uses
@@ -14,7 +14,7 @@
  */
 
 import { mulberry32, type Dataset, type PlsModel } from "@seminr/core";
-import { quantile, tCdf } from "@seminr/core/math";
+import { mean, pt, quantile, sd } from "@compstats/core/stats";
 
 // =============================================================================
 // Validation helpers
@@ -168,30 +168,24 @@ export function seqSum(x: readonly number[]): number {
 }
 
 /**
- * R `mean.default`: sequential sum/n plus a second-pass correction term.
+ * R's `mean.default` and `var`/`sd`, delegated to `@compstats/core`.
  *
- * `bootstrapCvpat` compares bootstrap means against `+/-orgDBar` with strict
- * inequalities; a one-ulp difference from a naive mean can flip a count.
- * Reproducing R's accumulation keeps those discrete counts bit-compatible.
+ * Both were implemented here through v0.1.1 and both are gone: upstream's
+ * `mean` is R's `do_mean` including the correcting second pass, and its `sd`
+ * centres on that same mean, as `cov.c`'s `MEAN` macro does. The conformance
+ * fixture `tests/fixtures/helpers/arith.json` pins both against R as exact
+ * doubles, so the delegation is verified rather than assumed.
+ *
+ * `seqSum` stays. It is not a mean and has callers that want a plain
+ * left-to-right sum in its own right — `cart.ts`'s node statistics and
+ * `featurePos.ts`'s residual sums — and R's third mean, `colMeans`
+ * (`array.c` `do_colsum`), is a single uncorrected pass built on exactly this.
+ * Do not route a `colMeans` site through `mean`.
  */
-export function rMean(x: readonly number[]): number {
-  const n = x.length;
-  const s = seqSum(x) / n;
-  const corr = x.map((v) => v - s);
-  return s + seqSum(corr) / n;
-}
-
-/** R `sd`/`var` (cov.c): sequential UNcorrected mean, sequential SSQ, ddof 1. */
-export function rSd(x: readonly number[]): number {
-  const n = x.length;
-  const m = seqSum(x) / n;
-  const sq = x.map((v) => (v - m) * (v - m));
-  return Math.sqrt(seqSum(sq) / (n - 1));
-}
 
 function pairedTStat(diff: readonly number[], mu = 0): number {
   const n = diff.length;
-  return (rMean(diff) - mu) / (rSd(diff) / Math.sqrt(n));
+  return (mean(diff) - mu) / (sd(diff) / Math.sqrt(n));
 }
 
 // =============================================================================
@@ -287,7 +281,7 @@ export function bootstrapCvpat(
   const n = lossM1.length;
   const d = lossM1.map((v, i) => lossM2[i]! - v);
   const orgTTest = pairedTStat(d);
-  const orgDBar = rMean(d);
+  const orgDBar = mean(d);
   const dNull = d.map((v) => v - orgDBar);
 
   let pairIdx: number[][];
@@ -311,10 +305,10 @@ export function bootstrapCvpat(
   for (let b = 0; b < nboot; b++) {
     const bootDiff = pairIdx[b]!.map((i) => d[i]!);
     tStat[b] = pairedTStat(bootDiff, orgDBar);
-    bootDBar[b] = rMean(dnullIdx[b]!.map((i) => dNull[i]!));
+    bootDBar[b] = mean(dnullIdx[b]!.map((i) => dNull[i]!));
   }
 
-  const std = rSd(bootDBar);
+  const std = sd(bootDBar);
   let tStatBootVar: number;
   if (Number.isNaN(std) || std < Number.EPSILON) {
     console.warn("Bootstrap variance near zero; t-statistic set to NA");
@@ -336,11 +330,18 @@ export function bootstrapCvpat(
   if (testtype === "two.sided") {
     pPercT = (countGt(tStat, absT) + countLe(tStat, -absT)) / nboot;
     pPercD = (countGt(bootDBar, absD) + countLe(bootDBar, -absD)) / nboot;
-    pVarT = Number.isNaN(tStatBootVar) ? NaN : 2 * tCdf(-Math.abs(tStatBootVar), n - 1);
+    // R: `2 * pt(-abs(t), n - 1, lower.tail = TRUE)` (helpers.R:202).
+    pVarT = Number.isNaN(tStatBootVar) ? NaN : 2 * pt(-Math.abs(tStatBootVar), n - 1);
   } else {
     pPercT = greaterPercentileP(tStat, orgTTest, nboot);
     pPercD = greaterPercentileP(bootDBar, orgDBar, nboot);
-    pVarT = Number.isNaN(tStatBootVar) ? NaN : 1 - tCdf(tStatBootVar, n - 1);
+    // R: `pt(t, n - 1, lower.tail = FALSE)` (helpers.R:220) -- the upper tail as
+    // a real argument, not one minus the lower. The difference is the far tail:
+    // at df 249 and t = 10 the subtraction gives exactly 0 where this gives
+    // 2.6e-20, so a strongly one-sided CVPAT would have printed p = 0.
+    pVarT = Number.isNaN(tStatBootVar)
+      ? NaN
+      : pt(tStatBootVar, n - 1, undefined, { lowerTail: false });
   }
 
   return makeCvpatBoot(orgTTest, pPercT, tStatBootVar, pVarT, pPercD);
@@ -391,7 +392,7 @@ export function cvpatPerConstruct(
  *
  * `bootValues` is indexed `[rowIdx][colIdx][b]`. The indirect path is the
  * elementwise product `[from, through, :] * [through, to, :]`. Quantiles are
- * R type-7 (via `@seminr/core/math`'s `quantile`).
+ * R type-7 (via `@compstats/core`'s `quantile`).
  */
 export function confInt(
   bootValues: number[][][],

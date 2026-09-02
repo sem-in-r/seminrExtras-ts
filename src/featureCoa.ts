@@ -26,9 +26,10 @@ import {
   type PlsModel,
   type PlsPrediction,
 } from "@seminr/core";
-import { quantile } from "@seminr/core/math";
+import { quantile } from "@compstats/core/stats";
 import { rpartAnova, type CartTree } from "./cart.ts";
-import { isNamedArgs, rMean, validateForPrediction } from "./helpers.ts";
+import { mean } from "@compstats/core/stats";
+import { isNamedArgs, validateForPrediction } from "./helpers.ts";
 
 const VALID_PARAMS = ["path_coef", "outer_weights", "outer_loadings", "rSquared"] as const;
 type CoaParam = (typeof VALID_PARAMS)[number];
@@ -203,8 +204,8 @@ export function predictiveDeviance(
   const predicted = column(composites.compositeOutOfSample, focalConstruct);
   const actualStar = column(composites.actualsStar, focalConstruct);
 
-  const isMse = rMean(actualStar.map((a, i) => (a - fitted[i]!) ** 2));
-  const oosMse = rMean(actualStar.map((a, i) => (a - predicted[i]!) ** 2));
+  const isMse = mean(actualStar.map((a, i) => (a - fitted[i]!) ** 2));
+  const oosMse = mean(actualStar.map((a, i) => (a - predicted[i]!) ** 2));
   const overfitRatio = (oosMse - isMse) / isMse;
 
   const pd = fitted.map((f, i) => f - predicted[i]!);

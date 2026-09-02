@@ -40,6 +40,7 @@ import {
   plotPos,
   plotPosCompare,
 } from "../src/plotting/results.ts";
+import { prettyTicks } from "../src/plotting/svg.ts";
 import { estimateRegistryModel } from "./helpers/models.ts";
 
 // ---------------------------------------------------------------------------
@@ -523,5 +524,52 @@ describe("groupScoreMeans", () => {
     const viaDtree = groupScoreMeans(coaRecord.devianceTree, coaRecord.plsModel);
     const viaCoa = groupScoreMeans(coaRecord);
     expect(viaDtree.values).toEqual(viaCoa.values);
+  });
+});
+
+// --- axis ticks --------------------------------------------------------------
+
+/**
+ * Axis ticks follow R's `pretty()`, because R's `axis()` does.
+ *
+ * R builds an axis by calling `R_pretty` over the user coordinate range and
+ * dropping the ticks that fall outside it (`CreateAtVector` in `plot.c`). The
+ * hand-rolled routine this replaced picked its step from thresholds 1.5 / 3 / 7
+ * where `R_pretty` derives 1.4 / 2.8 / 6.33 from `high.u.bias = 1.5` and
+ * `u5.bias = 0.5 + 1.5 * high.u.bias` — close enough to agree most of the time
+ * and to disagree on 1502 of 20000 random ranges, usually by emitting about
+ * twice R's tick count.
+ *
+ * The three cases below sit just inside those thresholds, which is where the
+ * two rules part company. Values are R's `pretty(c(lo, hi), n = 5)` filtered to
+ * the range.
+ */
+describe("prettyTicks follows R's pretty()", () => {
+  const cases: [number, number, number[]][] = [
+    [0, 1.45, [0, 0.5, 1]],
+    [0, 7.25, [0, 2, 4, 6]],
+    [0, 14.5, [0, 5, 10]],
+    [0, 32.5, [0, 5, 10, 15, 20, 25, 30]],
+    [0, 100, [0, 20, 40, 60, 80, 100]],
+  ];
+
+  for (const [lo, hi, expected] of cases) {
+    test(`pretty(c(${lo}, ${hi}), n = 5) clipped to the range`, () => {
+      expect(prettyTicks(lo, hi)).toEqual(expected);
+    });
+  }
+
+  test("a degenerate range gives one tick rather than throwing", () => {
+    // `rPretty` throws on a non-finite end and on `up < lo`; this guard is what
+    // keeps a zero-width or inverted window from reaching it.
+    expect(prettyTicks(3, 3)).toEqual([3]);
+    expect(prettyTicks(5, 1)).toEqual([5]);
+  });
+
+  test("ticks carry no float noise", () => {
+    for (const tick of prettyTicks(0, 1.45)) {
+      expect(String(tick).length).toBeLessThan(6);
+    }
+    expect(prettyTicks(-1, 1).some((v) => Object.is(v, -0))).toBe(false);
   });
 });

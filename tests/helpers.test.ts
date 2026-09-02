@@ -12,6 +12,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, spyOn, test } from "bun:test";
 import type { Dataset } from "@seminr/core";
+import { cor, cov, fromRows, toRows } from "@compstats/core/linalg";
+import { mean, pt, sd } from "@compstats/core/stats";
 import { FIXTURES_DIR } from "./helpers/fixtures.ts";
 import { estimateRegistryModel } from "./helpers/models.ts";
 import {
@@ -27,8 +29,6 @@ import {
   itemsOfConstruct,
   lvLoss,
   overallLoss,
-  rMean,
-  rSd,
   seqSum,
   validateForPrediction,
   validateSeminrModel,
@@ -305,10 +305,166 @@ describe("confInt R parity", () => {
 // --- numeric core exports ----------------------------------------------------
 
 describe("numeric core", () => {
-  test("seqSum, rMean, rSd basic behaviour", () => {
+  test("seqSum, mean, sd basic behaviour", () => {
     expect(seqSum([])).toBe(0);
     expect(seqSum([1, 2, 3, 4])).toBe(10);
-    expect(isClose(rMean([1, 2, 3, 4]), 2.5)).toBe(true);
-    expect(isClose(rSd([2, 4, 4, 4, 5, 5, 7, 9]), 2.138089935299395)).toBe(true);
+    expect(isClose(mean([1, 2, 3, 4]), 2.5)).toBe(true);
+    expect(isClose(sd([2, 4, 4, 4, 5, 5, 7, 9]), 2.138089935299395)).toBe(true);
+  });
+});
+
+// --- R arithmetic conformance ------------------------------------------------
+
+/**
+ * Which of R's three means each routine follows, pinned as exact doubles.
+ *
+ * R's three means are different C routines with different accumulation:
+ * `mean.default` (`summary.c` `do_mean`) makes a correcting second pass;
+ * `var`/`sd` (`cov.c`'s `MEAN` macro) has the same body; `colMeans`
+ * (`array.c` `do_colsum`) makes one pass and stops. Which one a site needs is
+ * a parity decision, and nothing at a call site used to say which it meant —
+ * which is how this package's `rSd` shipped through v0.1.1 centred on the
+ * wrong one. Both now delegate to `@compstats/core`, and these are the tests
+ * that say the delegation is exact.
+ *
+ * `toBe`, not a tolerance: the fixture's `longDouble` is false, so R's
+ * accumulators are plain doubles and every value here is reproducible in
+ * float64. Each pair asserts both halves — that the R-correct form is exact,
+ * and that the naive form is *not* — so a future failure says which half
+ * moved rather than only that something did. See `arith.R` for the seed.
+ */
+describe("R arithmetic conformance", () => {
+  const arith = JSON.parse(
+    readFileSync(join(FIXTURES_DIR, "helpers", "arith.json"), "utf8"),
+  ) as {
+    longDouble: boolean;
+    x: number[];
+    mean: number;
+    sd: number;
+    var: number;
+    mat: number[][];
+    colMeans: number[];
+  };
+
+  /** The uncorrected single pass — R's `colMeans`, and the wrong centre for `sd`. */
+  const plainMean = (v: readonly number[]): number => seqSum(v) / v.length;
+
+  test("the fixture is bit-reproducible on this platform", () => {
+    expect(arith.longDouble).toBe(false);
+  });
+
+  test("mean is R's mean.default, bit for bit", () => {
+    expect(mean(arith.x)).toBe(arith.mean);
+  });
+
+  test("the uncorrected sum/n is not R's mean — this is why seqSum is not one", () => {
+    expect(plainMean(arith.x)).not.toBe(arith.mean);
+  });
+
+  test("sd is R's sd, bit for bit", () => {
+    expect(sd(arith.x)).toBe(arith.sd);
+  });
+
+  test("centring on the uncorrected mean is not R's sd", () => {
+    const centre = plainMean(arith.x);
+    const naive = Math.sqrt(
+      seqSum(arith.x.map((v) => (v - centre) * (v - centre))) / (arith.x.length - 1),
+    );
+    expect(naive).not.toBe(arith.sd);
+  });
+
+  test("sd squared is R's var", () => {
+    expect(sd(arith.x) ** 2).toBeCloseTo(arith.var, 10);
+  });
+
+  /**
+   * The third mean, pinned as a rule rather than through a function.
+   *
+   * `featureCvpat.ts`'s private `colMeans` is not exported, so this pins the
+   * accumulation R's `colMeans` uses and the call site carries a comment
+   * pointing here. Routing that site through `mean` would break it, and this
+   * is the assertion that would catch it.
+   */
+  test("R's colMeans is the uncorrected pass, not mean.default", () => {
+    const columns = arith.colMeans.map((_, j) => arith.mat.map((row) => row[j]!));
+    for (const [j, column] of columns.entries()) {
+      expect(plainMean(column)).toBe(arith.colMeans[j]!);
+    }
+    // At least one column separates the two, or the assertion above proves nothing.
+    expect(columns.some((column) => mean(column) !== plainMean(column))).toBe(true);
+  });
+});
+
+/**
+ * R's one-matrix `cor(x)` and `cov(x)`, pinned as exact doubles.
+ *
+ * The call *form* is the parity decision here. R's one-matrix form reads every
+ * spread off a single accumulation; the two-argument `cor(x, y)` walks each
+ * column pair again and lands on different last bits. seminrExtras' R code
+ * calls the one-matrix form throughout (`stats::cor(construct_scores)` at
+ * feature_congruence.R:128,151; `stats::cov(info$data)` at
+ * feature_cta.R:552,591), and through v0.1.1 the port called the two-argument
+ * form against itself — a different function, exact on as few as 2 of 16 cells
+ * where the one-matrix form is exact on all of them.
+ *
+ * See `tests/fixtures/helpers/matstats.R` for the two shapes and why each is
+ * there. `toBe` for the same reason as the block above: `longDouble` is false.
+ */
+describe("R matrix-statistics conformance", () => {
+  const fx = JSON.parse(
+    readFileSync(join(FIXTURES_DIR, "helpers", "matstats.json"), "utf8"),
+  ) as Record<string, number[][]> & { longDouble: boolean };
+
+  const expectExact = (got: number[][], ref: number[][]): void => {
+    expect(got.length).toBe(ref.length);
+    ref.forEach((row, i) => row.forEach((v, j) => expect(got[i]![j]!).toBe(v)));
+  };
+
+  test("the fixture is bit-reproducible on this platform", () => {
+    expect(fx.longDouble).toBe(false);
+  });
+
+  for (const shape of ["scaled", "collinear"] as const) {
+    test(`cov(${shape}) is R's cov(x), bit for bit`, () => {
+      expectExact(toRows(cov(fromRows(fx[shape]!))), fx[`${shape}Cov`]!);
+    });
+
+    test(`cor(${shape}) is R's cor(x), bit for bit`, () => {
+      expectExact(toRows(cor(fromRows(fx[shape]!))), fx[`${shape}Cor`]!);
+    });
+
+  }
+});
+
+// --- the one-sided CVPAT p-value ---------------------------------------------
+
+/**
+ * `bootstrapCvpat`'s "greater" branch reads the upper tail directly.
+ *
+ * R writes it as `pt(t, n - 1, lower.tail = FALSE)` (helpers.R:220), not as
+ * one minus the lower tail. The distinction is invisible in the body of the
+ * distribution and total in the far tail, which is exactly where a strongly
+ * one-sided CVPAT lands: the subtraction underflows to zero and the table
+ * prints p = 0 where R prints a number.
+ *
+ * Values are R 4.5.3's, at df = 249.
+ */
+describe("the upper tail is read, not subtracted", () => {
+  const df = 249;
+
+  test("the far tail survives where the subtraction underflows", () => {
+    expect(pt(10, df, undefined, { lowerTail: false })).toBeCloseTo(2.5979623701972471e-20, 30);
+    expect(1 - pt(10, df)).toBe(0);
+  });
+
+  test("and it stays finite far past that", () => {
+    expect(pt(20, df, undefined, { lowerTail: false })).toBeGreaterThan(0);
+    expect(pt(20, df, undefined, { lowerTail: false })).toBeLessThan(1e-50);
+  });
+
+  test("the two tails still sum to one in the body", () => {
+    for (const t of [0.5, 1, 2]) {
+      expect(pt(t, df) + pt(t, df, undefined, { lowerTail: false })).toBeCloseTo(1, 14);
+    }
   });
 });

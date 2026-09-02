@@ -7,7 +7,7 @@
  * congruence test.
  *
  * The R chapter uses the psych and paran packages. Here PCA eigenvalues come
- * from `@seminr/core/math` (Jacobi eigendecomposition of the correlation
+ * from `@compstats/core/linalg` (symmetric eigendecomposition of the correlation
  * matrix), and Horn's parallel analysis is a small inline helper (no extra
  * dependency). Not ported: psych::iclust's Revelle beta (a clustering-based
  * unidimensionality index with no lightweight analogue).
@@ -31,14 +31,15 @@ import {
   summarizePls,
   summarizePlsBoot,
 } from "@seminr/core";
-import { colCor, jacobiEigenSym, quantile } from "@seminr/core/math";
+import { quantile } from "@compstats/core/stats";
+import { cor, eigenSymmetric, fromRows } from "@compstats/core/linalg";
 import { congruenceTest } from "@seminr/extras";
 import { loadCorpRep } from "./lib/data.ts";
 import { formatMatrix, heading } from "./lib/print.ts";
 
 /** Descending eigenvalues of a data block's correlation matrix. */
 function eigenvalues(block: number[][]): number[] {
-  return [...jacobiEigenSym(colCor(block, block)).values].sort((a, b) => b - a);
+  return [...eigenSymmetric(cor(fromRows(block))).values].sort((a, b) => b - a);
 }
 
 /**

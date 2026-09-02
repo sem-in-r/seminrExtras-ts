@@ -34,6 +34,7 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
+import { mean } from "@compstats/core/stats";
 import {
   isNamedArgs,
   itemsOfConstruct,
@@ -271,12 +272,6 @@ function computePcmForPath(
   });
 }
 
-function mean(x: readonly number[]): number {
-  let sum = 0;
-  for (const v of x) sum += v;
-  return sum / x.length;
-}
-
 /** `value.toFixed(decimals)` right-padded to `width` (Python `{v:width.df}`). */
 function fmtNum(value: number, width: number, decimals: number): string {
   return value.toFixed(decimals).padStart(width);
@@ -292,6 +287,7 @@ function renderPrint(analysis: PcmAnalysis): string {
     "",
   ];
   for (const res of analysis.pcmResults) {
+    // R `mean()` (`mean.default`, two-pass) — feature_pcm.R:361,364.
     const avgRmse = mean(res.pcmRmse);
     const avgMae = mean(res.pcmMae);
     lines.push(`  ${res.antecedent} -> ${res.mediator} -> ${res.target}`);
