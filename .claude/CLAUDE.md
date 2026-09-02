@@ -87,6 +87,13 @@ genuinely complex or out of scope, and prefer it as an optional/peer dependency 
 (copied from the py port into `tests/fixtures/`, never regenerated here), plus an SVG plotting layer for
 the 10 R `plot.*` methods and all 17 demos.
 
+Two fixtures under `tests/fixtures/helpers/` are the exception to "never regenerated here", and are a
+different kind of artefact: `arith.R` and `matstats.R` are generated in this repo by `Rscript` and pin
+R's **arithmetic** — which of R's three means a routine follows, and the one-matrix `cor`/`cov` call
+form — rather than seminrExtras' output. They assert exact doubles rather than a tolerance, which is
+sound only because `capabilities("long.double")` is FALSE on arm64 macOS; each fixture records that
+flag and its test asserts it first.
+
 - **Toolchain** (mirrors seminr-ts): Bun test runner, strict `tsc` build to `dist/`, pure ESM,
   ES2022/NodeNext, explicit `.ts` import extensions, **no linter**. `bun test` / `bun run build` /
   `bun run typecheck` / `bun run typecheck:demos`.
@@ -95,6 +102,19 @@ the 10 R `plot.*` methods and all 17 demos.
   deliberately NOT in the `src/index.ts` barrel — the R `:::` analog); `src/plotting/` (SVG emitters,
   exported via the barrel); `tests/helpers/{fixtures,models}.ts` (parity harness + 24-model registry);
   `demos/` (17 runnable scripts importing the built package).
+- **Dependencies**: `@seminr/core` (the estimator, root barrel only) and `@compstats/core` (the
+  low-level numerics, R-pinned). Scalars come from `@compstats/core/stats`, matrix work from
+  `@compstats/core/linalg`; **never the root `@compstats/core` entry**, which reaches its canvas and
+  interactive layers. `@seminr/core/math` is no longer imported anywhere — that facade existed for
+  this package and is free for seminr-ts to retire. Cross the row-major/column-major boundary with
+  `helpers.ts`'s `asMatrix`, never `fromRows`: on a bootstrap-loop shape `fromRows` costs three times
+  the computation it feeds.
+- **R has three means, and which one a site needs is a parity decision**: `mean.default`
+  (`summary.c`, two-pass) is `rMean`; `var`/`sd` (`cov.c`, the same body) is `rSd`; `colMeans`
+  (`array.c` `do_colsum`, one pass) is the private helper in `featureCvpat.ts`. Every call site names
+  the R function it follows, and `tests/fixtures/helpers/arith.R` pins all three as exact doubles.
+  Likewise `cor(x)`/`cov(x)`: R's one-matrix form is not its two-argument form, and this package
+  needs the one-matrix one (`matstats.R`).
 - **Conventions**: frozen result records with a `kind` discriminant + `toString()`/`summarize()`;
   dual positional/named call styles on every entry point; validation via `console.warn` + null return;
   exact R parity only via injected RNG streams (`draws`/`ordering(s)`/`perms`/`inits`/`partitions`) —
