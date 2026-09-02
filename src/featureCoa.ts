@@ -26,7 +26,7 @@ import {
   type PlsModel,
   type PlsPrediction,
 } from "@seminr/core";
-import { quantile } from "@seminr/core/math";
+import { quantile } from "@compstats/core/stats";
 import { rpartAnova, type CartTree } from "./cart.ts";
 import { isNamedArgs, rMean, validateForPrediction } from "./helpers.ts";
 

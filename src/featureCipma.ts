@@ -24,8 +24,8 @@
  */
 
 import { namedMatrix, type NamedMatrix, type PlsModel } from "@seminr/core";
-import { solve } from "@seminr/core/math";
-import { isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
+import { solve, toRows } from "@compstats/core/linalg";
+import { asMatrix, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
 import { assessNca, type NcaAnalysis } from "./featureNca.ts";
 import { formatTable, gFormat } from "./records.ts";
 
@@ -185,14 +185,11 @@ export function computeTotalEffects(pathCoefMatrix: readonly (readonly number[])
   const iMinusB = Array.from({ length: k }, (_, i) =>
     Array.from({ length: k }, (_, j) => (i === j ? 1 : 0) - pathCoefMatrix[i]![j]!),
   );
-  // Column-by-column solve of (I - B) X = I, then subtract I.
-  const out: number[][] = Array.from({ length: k }, () => new Array(k).fill(0));
-  for (let j = 0; j < k; j++) {
-    const e = Array.from({ length: k }, (_, i) => (i === j ? 1 : 0));
-    const col = solve(iMinusB, e);
-    for (let i = 0; i < k; i++) out[i]![j] = col[i]! - (i === j ? 1 : 0);
-  }
-  return out;
+  // `solve(a)` with no right-hand side is R's `solve(a)`: the inverse. This
+  // was a column-by-column solve against the identity, which is the same
+  // computation spelled out k times.
+  const inverse = toRows(solve(asMatrix(iMinusB)));
+  return inverse.map((row, i) => row.map((v, j) => v - (i === j ? 1 : 0)));
 }
 
 function pathCoefBlock(model: PlsModel, constructs: readonly string[]): number[][] {

@@ -11,7 +11,8 @@
  * Parity notes (py plan F11): resampling matches R's `rerun` re-estimation to
  * machine precision, so `draws` injects the R index streams for exact fixture
  * parity; the default path uses `mulberry32(seed)`, drawing one resample vector
- * per iteration. Correlation via `@seminr/core/math`'s `colCor`, R-ddof SD via
+ * per iteration. Correlation via `@compstats/core`'s one-matrix `cor(x)` (R's
+ * `stats::cor(construct_scores)`, feature_congruence.R:128,151), R-ddof SD via
  * `rSd`, type-7 quantile CIs via `confInt` — all from the shared kernel.
  */
 
@@ -25,8 +26,8 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
-import { colCor } from "@seminr/core/math";
-import { confInt, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
+import { cor, toRows } from "@compstats/core/linalg";
+import { asMatrix, confInt, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
 import { ciColumnLabels, formatTable } from "./records.ts";
 
 const HEADING = "Congruence coefficient test (Franke, Sarstedt & Danks, 2021)";
@@ -74,7 +75,7 @@ function rhoDiagonal(model: PlsModel, names: string[]): number[] {
 function correlationWithRho(model: PlsModel): { names: string[]; mat: number[][] } {
   const scores = model.constructScores;
   const names = [...scores.cols];
-  const mat = colCor(scores.values, scores.values).map((row) => [...row]);
+  const mat = toRows(cor(asMatrix(scores.values)));
   const diag = rhoDiagonal(model, names);
   for (let i = 0; i < names.length; i++) mat[i]![i] = diag[i]!;
   return { names, mat };

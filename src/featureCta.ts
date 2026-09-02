@@ -29,8 +29,9 @@ import {
   type NamedMatrix,
   type PlsModel,
 } from "@seminr/core";
-import { colCov, quantile } from "@seminr/core/math";
-import { isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
+import { quantile } from "@compstats/core/stats";
+import { cov as csCov, toRows } from "@compstats/core/linalg";
+import { asMatrix, isNamedArgs, rSd, validateSeminrModel } from "./helpers.ts";
 import { ciColumnLabels } from "./records.ts";
 
 const MIN_VALID_BOOTS = 10;
@@ -337,8 +338,17 @@ interface TestInfo {
   borrowing?: CtaBorrowing;
 }
 
+/**
+ * R's one-matrix `cov(x)` (feature_cta.R:552,591), over row-major input.
+ *
+ * The conversion shim, not the computation: `@compstats/core` holds a matrix
+ * column-major, and this package's tetrad machinery is row-major throughout.
+ * The one-matrix form matters — the two-argument `cov(x, y)` walks each column
+ * pair again and lands on different last bits, which is what this called until
+ * `tests/fixtures/helpers/matstats.R` pinned the difference.
+ */
 function cov(data: number[][]): number[][] {
-  return colCov(data, data);
+  return toRows(csCov(asMatrix(data)));
 }
 
 /** Column-major slice of pre-selected data by resampled row indices. */

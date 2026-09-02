@@ -16,8 +16,8 @@
  */
 
 import { mulberry32, namedMatrix, type NamedMatrix, type PlsModel } from "@seminr/core";
-import { solve } from "@seminr/core/math";
-import { isNamedArgs, validatePositiveInteger, validateSeminrModel } from "./helpers.ts";
+import { solve } from "@compstats/core/linalg";
+import { asMatrix, isNamedArgs, validatePositiveInteger, validateSeminrModel } from "./helpers.ts";
 import { nonzeroPathLines } from "./records.ts";
 
 const EPS = Number.EPSILON;
@@ -96,7 +96,7 @@ function weightedOls(
   }
   let beta: number[];
   try {
-    beta = solve(xtwx, xtwy);
+    beta = solve(asMatrix(xtwx), xtwy);
   } catch {
     return [new Array(p).fill(NaN), NaN];
   }

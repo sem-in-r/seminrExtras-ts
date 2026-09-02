@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, spyOn, test } from "bun:test";
 import { mulberry32 } from "@seminr/core";
-import { colCov } from "@seminr/core/math";
+import { cov as csCov, fromRows, toRows } from "@compstats/core/linalg";
 import {
   assessCta,
   computeTetrads,
@@ -416,9 +416,9 @@ describe("tetrad machinery", () => {
       const factor = normal();
       x.push(lambdas.map((lam) => lam * factor + Math.sqrt(1 - lam * lam) * normal()));
     }
-    const cov = colCov(x, x);
+    const covMat = toRows(csCov(fromRows(x)));
     const names = ["x1", "x2", "x3", "x4"];
-    const vals = computeTetrads(cov, names, enumerateTetrads(names));
+    const vals = computeTetrads(covMat, names, enumerateTetrads(names));
     expect(vals.every((v) => Math.abs(v) < 0.05)).toBe(true);
   });
 });

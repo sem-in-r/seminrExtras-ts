@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, spyOn, test } from "bun:test";
 import type { Dataset } from "@seminr/core";
+import { cor, cov, fromRows, toRows } from "@compstats/core/linalg";
 import { FIXTURES_DIR } from "./helpers/fixtures.ts";
 import { estimateRegistryModel } from "./helpers/models.ts";
 import {
@@ -391,4 +392,45 @@ describe("R arithmetic conformance", () => {
     // At least one column separates the two, or the assertion above proves nothing.
     expect(columns.some((column) => rMean(column) !== plainMean(column))).toBe(true);
   });
+});
+
+/**
+ * R's one-matrix `cor(x)` and `cov(x)`, pinned as exact doubles.
+ *
+ * The call *form* is the parity decision here. R's one-matrix form reads every
+ * spread off a single accumulation; the two-argument `cor(x, y)` walks each
+ * column pair again and lands on different last bits. seminrExtras' R code
+ * calls the one-matrix form throughout (`stats::cor(construct_scores)` at
+ * feature_congruence.R:128,151; `stats::cov(info$data)` at
+ * feature_cta.R:552,591), and through v0.1.1 the port called the two-argument
+ * form against itself — a different function, exact on as few as 2 of 16 cells
+ * where the one-matrix form is exact on all of them.
+ *
+ * See `tests/fixtures/helpers/matstats.R` for the two shapes and why each is
+ * there. `toBe` for the same reason as the block above: `longDouble` is false.
+ */
+describe("R matrix-statistics conformance", () => {
+  const fx = JSON.parse(
+    readFileSync(join(FIXTURES_DIR, "helpers", "matstats.json"), "utf8"),
+  ) as Record<string, number[][]> & { longDouble: boolean };
+
+  const expectExact = (got: number[][], ref: number[][]): void => {
+    expect(got.length).toBe(ref.length);
+    ref.forEach((row, i) => row.forEach((v, j) => expect(got[i]![j]!).toBe(v)));
+  };
+
+  test("the fixture is bit-reproducible on this platform", () => {
+    expect(fx.longDouble).toBe(false);
+  });
+
+  for (const shape of ["scaled", "collinear"] as const) {
+    test(`cov(${shape}) is R's cov(x), bit for bit`, () => {
+      expectExact(toRows(cov(fromRows(fx[shape]!))), fx[`${shape}Cov`]!);
+    });
+
+    test(`cor(${shape}) is R's cor(x), bit for bit`, () => {
+      expectExact(toRows(cor(fromRows(fx[shape]!))), fx[`${shape}Cor`]!);
+    });
+
+  }
 });

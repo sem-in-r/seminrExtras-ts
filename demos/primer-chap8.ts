@@ -30,7 +30,7 @@ import {
   twoStage,
   type BootModel,
 } from "@seminr/core";
-import { quantile } from "@seminr/core/math";
+import { quantile } from "@compstats/core/stats";
 import { loadCorpRep } from "./lib/data.ts";
 import { formatMatrix, heading } from "./lib/print.ts";
 

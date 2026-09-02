@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, spyOn, test } from "bun:test";
 import { rhoCAve, type NamedMatrix, type PlsModel } from "@seminr/core";
-import { colCor } from "@seminr/core/math";
+import { cor, fromRows, toRows } from "@compstats/core/linalg";
 import { congruenceTest, type CongruenceTest } from "../src/featureCongruence.ts";
 import { FIXTURES_DIR } from "./helpers/fixtures.ts";
 import { estimateRegistryModel } from "./helpers/models.ts";
@@ -57,7 +57,7 @@ function isClose(a: number, b: number, relTol: number, absTol: number): boolean 
 function referenceRc(model: PlsModel, x: string, y: string): number {
   const scores = model.constructScores;
   const names = [...scores.cols];
-  const mat = colCor(scores.values, scores.values).map((row) => [...row]);
+  const mat = toRows(cor(fromRows(scores.values)));
   const rca = rhoCAve(model.outerLoadings, names);
   for (let i = 0; i < names.length; i++) mat[i]![i] = rca.values[i]![0]!;
   const xi = names.indexOf(x);

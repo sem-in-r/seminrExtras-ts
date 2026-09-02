@@ -13,7 +13,7 @@
  */
 
 import type { NamedMatrix, SvgPlot } from "@seminr/core";
-import { quantile } from "@seminr/core/math";
+import { quantile } from "@compstats/core/stats";
 import type { CipmaAnalysis } from "../featureCipma.ts";
 import { groupScoreMeans, type CoaAnalysis } from "../featureCoa.ts";
 import type { CtaAnalysis } from "../featureCta.ts";

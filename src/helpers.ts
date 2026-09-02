@@ -5,7 +5,7 @@
  * Validation, endogenous-construct extraction, CVPAT loss calculation, and the
  * CVPAT bootstrap significance test. Numeric semantics follow R exactly (plan
  * F8): R-ddof statistics via {@link seqSum}/{@link rMean}/{@link rSd}, and
- * type-7 quantiles via `@seminr/core/math`'s `quantile`.
+ * type-7 quantiles via `@compstats/core`'s `quantile`.
  *
  * Stochastic entry points accept injectable `draws` (the exact resampling index
  * streams) for bit-level parity with R fixtures; the default path uses
@@ -14,7 +14,8 @@
  */
 
 import { mulberry32, type Dataset, type PlsModel } from "@seminr/core";
-import { quantile, tCdf } from "@seminr/core/math";
+import { pt, quantile } from "@compstats/core/stats";
+import { withDim, type Matrix } from "@compstats/core/linalg";
 
 // =============================================================================
 // Validation helpers
@@ -149,6 +150,38 @@ export function calculateLvLosses(
   const n = perConstruct.length > 0 ? perConstruct[0]!.length : 0;
   const values: number[][] = Array.from({ length: n }, (_, i) => perConstruct.map((col) => col[i]!));
   return { columns, values };
+}
+
+// =============================================================================
+// Representation boundary
+// =============================================================================
+
+/**
+ * A row-major `number[][]` adopted as a `@compstats/core` column-major matrix.
+ *
+ * `fromRows` does the same job, and this exists only because it does it too
+ * slowly for a bootstrap loop. On the shape CTA resamples 2000 times over
+ * (250 x 5), `fromRows` costs 24.8 microseconds against the 7.9 the covariance
+ * itself takes — three times the computation, and the whole of a 3.3x
+ * regression when the covariance moved to `@compstats/core`. Filling the
+ * buffer in one typed pass costs about 2 and lands the round trip back at the
+ * hand-written loop it replaced.
+ *
+ * Verified bit-identical to the `fromRows` route, so this is a cost decision
+ * and never a numeric one: the matrix it returns is the same matrix.
+ *
+ * `withDim` adopts the buffer rather than copying it, so nothing may write to
+ * `buf` after this returns.
+ */
+export function asMatrix(rows: readonly (readonly number[])[]): Matrix {
+  const nrow = rows.length;
+  const ncol = nrow > 0 ? rows[0]!.length : 0;
+  const buf = new Float64Array(nrow * ncol);
+  for (let i = 0; i < nrow; i++) {
+    const row = rows[i]!;
+    for (let j = 0; j < ncol; j++) buf[j * nrow + i] = row[j]!;
+  }
+  return withDim(buf, { nrow, ncol });
 }
 
 // =============================================================================
@@ -354,11 +387,18 @@ export function bootstrapCvpat(
   if (testtype === "two.sided") {
     pPercT = (countGt(tStat, absT) + countLe(tStat, -absT)) / nboot;
     pPercD = (countGt(bootDBar, absD) + countLe(bootDBar, -absD)) / nboot;
-    pVarT = Number.isNaN(tStatBootVar) ? NaN : 2 * tCdf(-Math.abs(tStatBootVar), n - 1);
+    // R: `2 * pt(-abs(t), n - 1, lower.tail = TRUE)` (helpers.R:202).
+    pVarT = Number.isNaN(tStatBootVar) ? NaN : 2 * pt(-Math.abs(tStatBootVar), n - 1);
   } else {
     pPercT = greaterPercentileP(tStat, orgTTest, nboot);
     pPercD = greaterPercentileP(bootDBar, orgDBar, nboot);
-    pVarT = Number.isNaN(tStatBootVar) ? NaN : 1 - tCdf(tStatBootVar, n - 1);
+    // R writes this as `pt(t, n - 1, lower.tail = FALSE)` (helpers.R:220) --
+    // the upper tail as a real argument, not one minus the lower. This is the
+    // subtraction R avoids, kept only because `@compstats/core`'s `pt` has no
+    // `lowerTail` option yet (requested; `pnorm` and `pchisq` both take one).
+    // It costs the far tail: at df 249 and t = 10 this gives exactly 0 where R
+    // gives 2.6e-20. Route it through the option as soon as it lands.
+    pVarT = Number.isNaN(tStatBootVar) ? NaN : 1 - pt(tStatBootVar, n - 1);
   }
 
   return makeCvpatBoot(orgTTest, pPercT, tStatBootVar, pVarT, pPercD);
@@ -409,7 +449,7 @@ export function cvpatPerConstruct(
  *
  * `bootValues` is indexed `[rowIdx][colIdx][b]`. The indirect path is the
  * elementwise product `[from, through, :] * [through, to, :]`. Quantiles are
- * R type-7 (via `@seminr/core/math`'s `quantile`).
+ * R type-7 (via `@compstats/core`'s `quantile`).
  */
 export function confInt(
   bootValues: number[][][],
