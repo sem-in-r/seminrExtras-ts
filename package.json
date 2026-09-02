@@ -1,6 +1,6 @@
 {
   "name": "@seminr/extras",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Supplementary evaluation methods for SEMinR PLS-SEM models — CVPAT, PCM, cIPMA, COA, NCA, CTA-PLS, FIMIX-PLS, PLS-POS, and congruence testing, ported from the seminrExtras R package",
   "author": "Soumya Ray",
   "repository": {
